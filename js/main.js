@@ -2297,24 +2297,20 @@ function getSecureImageUrl(url) {
  * Googleのクローラーに「これは本のランキングデータである」と伝えます
  */
 function injectStructuredData(genreId, books) {
-    // データが空なら何もしない
     if (!books || books.length === 0) return;
 
-    // このジャンル専用のscriptタグを探す
     const scriptId = `json-ld-${genreId}`;
     let script = document.getElementById(scriptId);
 
-    // 古いデータがあれば削除（更新時のため）
     if (script) {
         script.remove();
     }
 
-    // Googleに伝えるためのデータカタログを作成
+    // Googleに「本のランキング一覧」であることを正しく伝える
     const structuredData = {
         "@context": "https://schema.org",
-        "@type": "ItemList", // ランキング（リスト）であることを宣言
+        "@type": "ItemList", 
         "itemListElement": books.map((book, index) => {
-            // 著者名を文字列化
             let authorText = "著者不明";
             if (book.authors && Array.isArray(book.authors)) {
                 authorText = book.authors.join(", ");
@@ -2324,30 +2320,23 @@ function injectStructuredData(genreId, books) {
 
             return {
                 "@type": "ListItem",
-                "position": index + 1, // 順位
+                "position": index + 1, // 順位情報は非常に有益なSEOデータです
                 "item": {
-                    "@type": "Book", // 本のデータであることを宣言
+                    "@type": "Book",
                     "name": book.title,
                     "author": {
                         "@type": "Person",
                         "name": authorText
-                    },
-                    "aggregateRating": {
-                        "@type": "AggregateRating",
-                        "ratingValue": book.score || 0, // スコア
-                        "reviewCount": book.raw_score || 1 // 投票数（概算）
                     }
+                    // aggregateRating（評価）の部分のみを削除しました
                 }
             };
         })
     };
 
-    // 新しいscriptタグを作成して <head> に追加
     script = document.createElement('script');
     script.id = scriptId;
     script.type = 'application/ld+json';
     script.text = JSON.stringify(structuredData);
     document.head.appendChild(script);
-    
-    // console.log(`[SEO] ${genreId} の構造化データを更新しました`); // 確認用
 }
